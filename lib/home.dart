@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:substring_highlight/substring_highlight.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
@@ -13,11 +14,6 @@ List<String> peoples = [
   "Kattpaa",
   "Maheshmati",
   "Bhalaldev",
-  "Mahendra Bahubali",
-  "Devsena",
-  "Kattpaa",
-  "Maheshmati",
-  "Bhalaldev"
 ];
 
 List<String> _autocomplete = [];
@@ -27,6 +23,12 @@ String? selectedText = "";
 TextEditingController controller = TextEditingController();
 
 class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    _autocomplete = peoples;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -44,23 +46,23 @@ class _HomePageState extends State<HomePage> {
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                margin: EdgeInsets.only(bottom: 48, left: 2, right: 2),
-                padding: EdgeInsets.only(bottom: 5),
+                margin: const EdgeInsets.only(bottom: 48, left: 2, right: 2),
+                padding: const EdgeInsets.only(bottom: 5),
                 child: Visibility(
                     visible: _isEmpty,
                     child: Container(
                       decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10)),
-                      height: 180,
                       child: ListView.builder(
-                          itemCount: peoples.length,
+                          itemCount: _autocomplete.length,
                           shrinkWrap: true,
                           itemBuilder: (context, index) {
+                            final item = _autocomplete.elementAt(index);
                             return InkWell(
                               onTap: () {
                                 setState(() {
-                                  selectedText = peoples[index];
+                                  selectedText = _autocomplete[index];
                                   controller.text =
                                       "${controller.text} $selectedText";
                                   selectedText = "";
@@ -70,9 +72,11 @@ class _HomePageState extends State<HomePage> {
                               child: Container(
                                 padding: const EdgeInsets.only(
                                     top: 10, bottom: 10, left: 12, right: 12),
-                                child: Text(
-                                  "@ " + peoples[index],
-                                  style: const TextStyle(color: Colors.black),
+                                child: SubstringHighlight(
+                                  text: "@" + item,
+                                  term: controller.text,
+                                  textStyleHighlight:
+                                      TextStyle(color: Colors.blueAccent),
                                 ),
                               ),
                             );
@@ -112,11 +116,24 @@ class _HomePageState extends State<HomePage> {
         _isEmpty = false;
       });
     } else {
-      if (vl.contains("@")) {
+      List<String> results = [];
+      if (vl.startsWith("@") && vl.length == 1) {
+        _isEmpty = true;
+        results = peoples;
+      } else {
         setState(() {
           _isEmpty = true;
+          var x = vl.substring(1);
+          if (x.isNotEmpty) {
+            results = peoples
+                .where((user) => user.toLowerCase().contains(x.toLowerCase()))
+                .toList();
+          }
         });
       }
+      setState(() {
+        _autocomplete = results;
+      });
     }
   }
 }
